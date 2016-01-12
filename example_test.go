@@ -2,6 +2,7 @@ package goini
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -75,4 +76,30 @@ message=world
 	}
 	// Output: 1
 	// hello world
+}
+
+func ExampleDecodeOptionSet_Decode() {
+	rawSection := RawSection{
+		"key": []string{"1"},
+	}
+
+	spec := DecodeOptionSet{
+		"key": &DecodeOption{UniqueOption,
+			"A help message.",
+			func(d interface{}, v string) error {
+				if i, e := strconv.Atoi(v); e != nil {
+					return e
+				} else {
+					*d.(*int) = i
+					return nil
+				}
+			},
+		},
+	}
+
+	var key int
+	spec.Decode(&key, rawSection)
+	fmt.Println(key)
+
+	//Output: 1
 }

@@ -20,6 +20,19 @@ import (
 	"strings"
 )
 
+const (
+	UniqueOption = iota
+	MultiOption  = iota
+)
+
+type DecodeOption struct {
+	Kind  int
+	Usage string
+	Parse func(interface{}, string) error
+}
+
+type DecodeOptionSet map[string]*DecodeOption
+
 // Warning: Prefer to use the public methods since the type of RawSection
 // might change.
 type RawSection map[string][]string
@@ -68,6 +81,28 @@ func (s RawSection) Properties() []string {
 		keys = append(keys, p)
 	}
 	return keys
+}
+
+func (dos DecodeOptionSet) Decode(dest interface{}, section RawSection) error {
+	for _, property := range section.Properties() {
+		if option, ok := dos[property]; !ok {
+			return fmt.Errorf("unexpected property %s",
+				strconv.Quote(property))
+		} else {
+			values := section.GetPropertyValues(property)
+			if option.Kind == UniqueOption && len(values) != 1 {
+				return fmt.Errorf("property %s cannot be repeated",
+					strconv.Quote(property))
+			}
+			for _, value := range values {
+				if e := option.Parse(dest, value); e != nil {
+					return fmt.Errorf("error parsing %s: %s",
+						strconv.Quote(property), e)
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // Returns the list of unique sections in the config object.
