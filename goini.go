@@ -20,13 +20,15 @@ import (
 	"strings"
 )
 
+type DecodeOptionKind int
+
 const (
-	UniqueOption = iota
-	MultiOption  = iota
+	UniqueOption DecodeOptionKind = iota
+	MultiOption                   = iota
 )
 
 type DecodeOption struct {
-	Kind  int
+	Kind  DecodeOptionKind
 	Usage string
 	Parse func(interface{}, string) error
 }
