@@ -87,12 +87,12 @@ func ExampleDecodeOptionSet_Decode() {
 		"key": &DecodeOption{Kind: UniqueOption,
 			Usage: "A help message.",
 			Parse: func(d interface{}, v string) error {
-				if i, e := strconv.Atoi(v); e != nil {
+				i, e := strconv.Atoi(v)
+				if e != nil {
 					return e
-				} else {
-					*d.(*int) = i
-					return nil
 				}
+				*d.(*int) = i
+				return nil
 			},
 		},
 	}

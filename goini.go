@@ -1,4 +1,4 @@
-// A config parser for .ini files, written in pure go.
+// Package goini provides a config parser for .ini files.
 //
 // In this dialect:
 //
@@ -67,17 +67,17 @@ func (s RawSection) GetPropertyValues(property string) []string {
 // as a space separated string. Returns true if the propery has been set
 // at least once.
 func (s RawSection) GetPropertyNumber(property string) (json.Number, bool) {
-	if vs, ok := s[property]; !ok {
+	vs, ok := s[property]
+	if !ok {
 		return "", false
-	} else {
-		return json.Number(strings.Join(vs, " ")), true
 	}
+	return json.Number(strings.Join(vs, " ")), true
 }
 
 // Returns the list of unique properties that have been set at least once.
 func (s RawSection) Properties() []string {
 	keys := []string{}
-	for p, _ := range s {
+	for p := range s {
 		keys = append(keys, p)
 	}
 	return keys
@@ -85,20 +85,20 @@ func (s RawSection) Properties() []string {
 
 func (dos DecodeOptionSet) Decode(dest interface{}, section RawSection) error {
 	for _, property := range section.Properties() {
-		if option, ok := dos[property]; !ok {
+		option, ok := dos[property]
+		if !ok {
 			return fmt.Errorf("unexpected property %s",
 				strconv.Quote(property))
-		} else {
-			values := section.GetPropertyValues(property)
-			if option.Kind == UniqueOption && len(values) != 1 {
-				return fmt.Errorf("property %s cannot be repeated",
-					strconv.Quote(property))
-			}
-			for _, value := range values {
-				if e := option.Parse(dest, value); e != nil {
-					return fmt.Errorf("error parsing %s: %s",
-						strconv.Quote(property), e)
-				}
+		}
+		values := section.GetPropertyValues(property)
+		if option.Kind == UniqueOption && len(values) != 1 {
+			return fmt.Errorf("property %s cannot be repeated",
+				strconv.Quote(property))
+		}
+		for _, value := range values {
+			if e := option.Parse(dest, value); e != nil {
+				return fmt.Errorf("error parsing %s: %s",
+					strconv.Quote(property), e)
 			}
 		}
 	}
@@ -124,18 +124,16 @@ func (cp *RawConfigParser) parseLine(line string) error {
 		if cp.currentLine != "" {
 			cp.err = errors.New("Invalid continuation into comment line.")
 			return cp.err
-		} else {
-			return nil
 		}
+		return nil
 	}
 
 	if len(line) > 0 && line[len(line)-1] == '\\' {
 		cp.currentLine += line[:len(line)-1]
 		return nil
-	} else {
-		line = cp.currentLine + line
-		cp.currentLine = ""
 	}
+	line = cp.currentLine + line
+	cp.currentLine = ""
 
 	if len(strings.TrimSpace(line)) == 0 {
 		return nil
@@ -192,9 +190,8 @@ func (cp *RawConfigParser) Finish() (*RawConfig, error) {
 	cp.err = nil
 	if retError != nil {
 		return nil, retError
-	} else {
-		return retConfig, nil
 	}
+	return retConfig, nil
 }
 
 func (cp *RawConfigParser) addSection(name string) error {
@@ -216,11 +213,11 @@ func (cp *RawConfigParser) Parse(file io.Reader) error {
 	line := 0
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		line += 1
+		line++
 
 		if err := cp.parseLine(scanner.Text()); err != nil {
-			return errors.New(fmt.Sprintf(
-				"error parsing line %d %v", line, err))
+			return fmt.Errorf("error parsing line %d %v",
+				line, err)
 		}
 	}
 	if err := scanner.Err(); err != nil {
@@ -228,8 +225,8 @@ func (cp *RawConfigParser) Parse(file io.Reader) error {
 	}
 
 	if cp.currentLine != "" {
-		return errors.New(fmt.Sprintf(
-			"error parsing line %d: continuation at end of file", line))
+		return fmt.Errorf(
+			"error parsing line %d: continuation at end of file", line)
 	}
 	return nil
 }
@@ -239,12 +236,12 @@ func (cp *RawConfigParser) ParseFile(filename string) error {
 		return cp.err
 	}
 
-	if file, err := os.Open(filename); err != nil {
-		return errors.New(fmt.Sprintf("error opening file %s: %v",
-			strconv.Quote(filename), err))
-	} else {
-		return cp.Parse(file)
+	file, err := os.Open(filename)
+	if err != nil {
+		return fmt.Errorf("error opening file %s: %v",
+			strconv.Quote(filename), err)
 	}
+	return cp.Parse(file)
 }
 
 func ParseFile(filename string) (*RawConfig, error) {

@@ -10,12 +10,12 @@ import (
 func parseAndFinish(t *testing.T, input string) *RawConfig {
 	cp := NewRawConfigParser()
 	cp.Parse(strings.NewReader(input))
-	if ret, err := cp.Finish(); err != nil {
+	ret, err := cp.Finish()
+	if err != nil {
 		t.Fatalf("Error parsing \n\n%s\ngot %v", input, err)
 		return nil
-	} else {
-		return ret
 	}
+	return ret
 }
 
 func checkSection(t *testing.T, name string, actual RawSection,
