@@ -84,9 +84,9 @@ func ExampleDecodeOptionSet_Decode() {
 	}
 
 	spec := DecodeOptionSet{
-		"key": &DecodeOption{UniqueOption,
-			"A help message.",
-			func(d interface{}, v string) error {
+		"key": &DecodeOption{Kind: UniqueOption,
+			Usage: "A help message.",
+			Parse: func(d interface{}, v string) error {
 				if i, e := strconv.Atoi(v); e != nil {
 					return e
 				} else {
