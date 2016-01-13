@@ -6,6 +6,8 @@
 //   - A line ending with a '\' continues onto the next line.
 //   - It is illegal to have a continuation before a comment or the end of
 //     file.
+//   - All leading and trailing whitespace is stripped from properties
+//     and values.
 //
 package goini
 
@@ -178,7 +180,9 @@ func (cp *RawConfigParser) parseProperty(line string) error {
 		return cp.err
 	}
 
-	cp.currentSection.addProperty(parts[0], parts[1])
+	p := strings.TrimSpace(parts[0])
+	v := strings.TrimSpace(parts[1])
+	cp.currentSection.addProperty(p, v)
 	return nil
 }
 
