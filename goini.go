@@ -32,7 +32,7 @@ const (
 type DecodeOption struct {
 	Kind  DecodeOptionKind
 	Usage string
-	Parse func(interface{}, string) error
+	Parse func(string, interface{}) error
 }
 
 type DecodeOptionSet map[string]*DecodeOption
@@ -87,7 +87,7 @@ func (s RawSection) Properties() []string {
 	return keys
 }
 
-func (dos DecodeOptionSet) Decode(dest interface{}, section RawSection) error {
+func (dos DecodeOptionSet) Decode(section RawSection, dest interface{}) error {
 	for _, property := range section.Properties() {
 		option, ok := dos[property]
 		if !ok {
@@ -100,7 +100,7 @@ func (dos DecodeOptionSet) Decode(dest interface{}, section RawSection) error {
 				strconv.Quote(property))
 		}
 		for _, value := range values {
-			if e := option.Parse(dest, value); e != nil {
+			if e := option.Parse(value, dest); e != nil {
 				return fmt.Errorf("error parsing %s: %s",
 					strconv.Quote(property), e)
 			}
