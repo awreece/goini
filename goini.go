@@ -14,7 +14,6 @@ package goini
 import (
 	"bufio"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -55,6 +54,7 @@ type RawConfigParser struct {
 	currentSection RawSection
 	currentLine    string
 	err            error
+	numLines       int
 }
 
 func (s RawSection) addProperty(property, value string) {
@@ -116,7 +116,7 @@ func (c *RawConfig) Sections() map[string]RawSection {
 
 func NewRawConfigParser() *RawConfigParser {
 	config := &RawConfig{make(RawSection), make(map[string]RawSection)}
-	return &RawConfigParser{config, config.GlobalSection, "", nil}
+	return &RawConfigParser{config, config.GlobalSection, "", nil, 0}
 }
 
 func (cp *RawConfigParser) parseLine(line string) error {
@@ -126,7 +126,7 @@ func (cp *RawConfigParser) parseLine(line string) error {
 
 	if len(line) > 0 && (line[0] == ';' || line[0] == '#') {
 		if cp.currentLine != "" {
-			cp.err = errors.New("Invalid continuation into comment line.")
+			cp.err = fmt.Errorf("Invalid continuation into comment line on line %d.", cp.numLines)
 			return cp.err
 		}
 		return nil
@@ -136,10 +136,10 @@ func (cp *RawConfigParser) parseLine(line string) error {
 		cp.currentLine += line[:len(line)-1]
 		return nil
 	}
-	line = cp.currentLine + line
+	line = strings.TrimSpace(cp.currentLine + line)
 	cp.currentLine = ""
 
-	if len(strings.TrimSpace(line)) == 0 {
+	if len(line) == 0 {
 		return nil
 	}
 
@@ -156,17 +156,17 @@ func (cp *RawConfigParser) parseLine(line string) error {
 
 func (cp *RawConfigParser) parseSectionHeader(line string) error {
 	if line[0] != '[' {
-		cp.err = errors.New("Invalid section header start character")
+		cp.err = fmt.Errorf("Invalid section header start character on line %d", cp.numLines)
 		return cp.err
 	}
 
 	parts := strings.SplitN(line[1:], "]", 2)
 	if len(parts) != 2 {
-		cp.err = errors.New("No section header end character found")
+		cp.err = fmt.Errorf("No section header end character found on line %d", cp.numLines)
 		return cp.err
 	}
 	if parts[1] != "" {
-		cp.err = errors.New("Trailing characters after section header")
+		cp.err = fmt.Errorf("Trailing characters after section header on line %d", cp.numLines)
 		return cp.err
 	}
 
@@ -176,7 +176,7 @@ func (cp *RawConfigParser) parseSectionHeader(line string) error {
 func (cp *RawConfigParser) parseProperty(line string) error {
 	parts := strings.SplitN(line, "=", 2)
 	if len(parts) != 2 || len(parts[0]) == 0 {
-		cp.err = errors.New("Invalid property line")
+		cp.err = fmt.Errorf("Invalid property on line %d", cp.numLines)
 		return cp.err
 	}
 
@@ -191,9 +191,7 @@ func (cp *RawConfigParser) parseProperty(line string) error {
 // Also resets the config parser.
 func (cp *RawConfigParser) Finish() (*RawConfig, error) {
 	retConfig, retError := cp.config, cp.err
-	cp.config = &RawConfig{make(RawSection), make(map[string]RawSection)}
-	cp.currentSection = cp.config.GlobalSection
-	cp.err = nil
+	*cp = *NewRawConfigParser()
 	if retError != nil {
 		return nil, retError
 	}
@@ -202,7 +200,7 @@ func (cp *RawConfigParser) Finish() (*RawConfig, error) {
 
 func (cp *RawConfigParser) addSection(name string) error {
 	if _, ok := cp.config.sections[name]; ok {
-		cp.err = errors.New(fmt.Sprint("Duplicate section name", strconv.Quote(name)))
+		cp.err = fmt.Errorf("Duplicate section name %s on line %d", strconv.Quote(name), cp.numLines)
 		return cp.err
 	}
 
@@ -216,14 +214,13 @@ func (cp *RawConfigParser) Parse(file io.Reader) error {
 		return cp.err
 	}
 
-	line := 0
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		line++
+		cp.numLines++
 
 		if err := cp.parseLine(scanner.Text()); err != nil {
 			return fmt.Errorf("error parsing line %d %v",
-				line, err)
+				cp.numLines, err)
 		}
 	}
 	if err := scanner.Err(); err != nil {
@@ -232,7 +229,7 @@ func (cp *RawConfigParser) Parse(file io.Reader) error {
 
 	if cp.currentLine != "" {
 		return fmt.Errorf(
-			"error parsing line %d: continuation at end of file", line)
+			"error parsing line %d: continuation at end of file", cp.numLines)
 	}
 	return nil
 }

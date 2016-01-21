@@ -161,6 +161,24 @@ func TestInvalidProperty(t *testing.T) {
 	}
 }
 
+func TestLeadingWhitespace(t *testing.T) {
+	c := parseAndFinish(t, "\n\t\t\t[test1]\n\t\t\tquery=select 1\n\t\t\trate=1")
+
+	checkSection(t, "global", c.GlobalSection, RawSection{})
+
+	if len(c.Sections()) > 1 {
+		t.Error("Unexpected sections found: ", c.Sections())
+	}
+	if section, ok := c.Sections()["test1"]; !ok {
+		t.Errorf("section not found: got %v", c.Sections())
+	} else {
+		checkSection(t, "test1", section, RawSection{
+			"query": []string{"select 1"},
+			"rate":  []string{"1"},
+		})
+	}
+}
+
 func TestSectionEmpty(t *testing.T) {
 	c := parseAndFinish(t, joinLines(
 		"[section]",
