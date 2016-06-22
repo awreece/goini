@@ -43,6 +43,9 @@ type RawSection map[string][]string
 type RawConfig struct {
 	GlobalSection RawSection
 	sections      map[string]RawSection
+
+	// Ordered based on order in the config file.
+	sectionNames []string
 }
 
 // An object for parsing config files and building a RawConfig. Can be
@@ -109,13 +112,20 @@ func (dos DecodeOptionSet) Decode(section RawSection, dest interface{}) error {
 	return nil
 }
 
+// Return the section by name or nil if the section
+// was not defined.
+//
+func (c *RawConfig) Section(n string) RawSection {
+	return c.sections[n]
+}
+
 // Returns the list of unique sections in the config object.
-func (c *RawConfig) Sections() map[string]RawSection {
-	return c.sections
+func (c *RawConfig) Sections() []string {
+	return c.sectionNames
 }
 
 func NewRawConfigParser() *RawConfigParser {
-	config := &RawConfig{make(RawSection), make(map[string]RawSection)}
+	config := &RawConfig{make(RawSection), make(map[string]RawSection), nil}
 	return &RawConfigParser{config, config.GlobalSection, "", nil, 0}
 }
 
@@ -206,6 +216,8 @@ func (cp *RawConfigParser) addSection(name string) error {
 
 	cp.currentSection = make(map[string][]string)
 	cp.config.sections[name] = cp.currentSection
+	cp.config.sectionNames = append(cp.config.sectionNames, name)
+
 	return nil
 }
 

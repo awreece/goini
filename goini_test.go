@@ -169,7 +169,7 @@ func TestLeadingWhitespace(t *testing.T) {
 	if len(c.Sections()) > 1 {
 		t.Error("Unexpected sections found: ", c.Sections())
 	}
-	if section, ok := c.Sections()["test1"]; !ok {
+	if section := c.Section("test1"); section == nil {
 		t.Errorf("section not found: got %v", c.Sections())
 	} else {
 		checkSection(t, "test1", section, RawSection{
@@ -189,7 +189,7 @@ func TestSectionEmpty(t *testing.T) {
 	if len(c.Sections()) > 1 {
 		t.Error("Unexpected sections found: ", c.Sections())
 	}
-	if section, ok := c.Sections()["section"]; !ok {
+	if section := c.Section("section"); section == nil {
 		t.Errorf("section not found: got %v", c.Sections())
 	} else {
 		checkSection(t, "section", section, RawSection{})
@@ -207,7 +207,7 @@ func TestSectionPropery(t *testing.T) {
 	if len(c.Sections()) > 1 {
 		t.Error("Unexpected sections found: ", c.Sections())
 	}
-	if section, ok := c.Sections()["section"]; !ok {
+	if section := c.Section("section"); section == nil {
 		t.Errorf("section not found: got %v", c.Sections())
 	} else {
 		checkSection(t, "section", section, RawSection{"key": {"value"}})
@@ -227,13 +227,13 @@ func TestMultipleSection(t *testing.T) {
 		t.Error("Unexpected sections found: ", c.Sections())
 	}
 
-	if section, ok := c.Sections()["section1"]; !ok {
+	if section := c.Section("section1"); section == nil {
 		t.Errorf("section not found: got %v", c.Sections())
 	} else {
 		checkSection(t, "section1", section, RawSection{})
 	}
 
-	if section, ok := c.Sections()["section2"]; !ok {
+	if section := c.Section("section2"); section == nil {
 		t.Errorf("section not found: got %v", c.Sections())
 	} else {
 		checkSection(t, "section2", section, RawSection{})

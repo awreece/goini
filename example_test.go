@@ -13,7 +13,7 @@ func Example_section() {
 message=hello
 	`))
 	if config, err := cp.Finish(); err == nil {
-		section := config.Sections()["section"]
+		section := config.Section("section")
 		message := strings.Join(section.GetPropertyValues("message"), " ")
 		fmt.Println(message)
 	}
