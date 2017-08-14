@@ -253,8 +253,7 @@ func (cp *RawConfigParser) ParseFile(filename string) error {
 
 	file, err := os.Open(filename)
 	if err != nil {
-		return fmt.Errorf("error opening file %s: %v",
-			strconv.Quote(filename), err)
+		return err
 	}
 	return cp.Parse(file)
 }
